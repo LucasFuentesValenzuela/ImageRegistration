@@ -6,7 +6,7 @@ import os
 
 import tifffile as tiff
 
-import astroalign as aa
+from astroalign import *
 
 def flip_rotate_images(Folders):
     for filename in os.listdir(Folders['HighMag']):
@@ -115,13 +115,12 @@ def binarize_img(img,th,hM):
     
     return thresh
 
-def register_img(img_virtual,img_lowMag,th,PIXEL_TOL):
-    aa.PIXEL_TOL=PIXEL_TOL
+def register_img(img_virtual,img_lowMag,th):
     img_virtual_bin=binarize_img(img_virtual,th,True)
     img_lowMag_bin=binarize_img(img_lowMag,th,False)
 
-    transf, (pos_img_virtual, pos_img_lM) = aa.find_transform(img_virtual_bin, img_lowMag_bin)
-    registered_image = aa.apply_transform(transf,img_virtual, img_lowMag)
+    transf, (pos_img_virtual, pos_img_lM) = find_transform(img_virtual_bin, img_lowMag_bin)
+    registered_image = apply_transform(transf,img_virtual, img_lowMag)
     img_aligned=registered_image[0]*3
 
     
@@ -177,7 +176,7 @@ def run_registration(Folders,th):
                 img_aligned,transf,pos_img_virtual,pos_img_lM=register_img(img_virtual,img_lowMag,th)
                 cv2.imwrite(Folders['Aligned']+full_image_name,img_aligned)
                 print("Registration Succesful")
-            except aa.MaxIterError: 
+            except MaxIterError: 
                 print('ERROR: Could not find Registration -- skip FOV')
                 continue
             except: 

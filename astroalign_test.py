@@ -215,6 +215,8 @@ def find_transform(source, target):
         TypeError: If input type of ``source`` or ``target`` is not supported.
         Exception: If it cannot find more than 3 stars on any input.
     """
+
+
     from scipy.spatial import KDTree
 
     try:
@@ -273,9 +275,11 @@ def find_transform(source, target):
 
     inv_model = _MatchTransform(source_controlp, target_controlp)
     n_invariants = len(matches)
-    max_iter = n_invariants
+    max_iter = n_invariants*10
+    print("Current Max Iter is: ", max_iter)
     # Set the minimum matches to be between 1 and 10 asterisms
     min_matches = max(1, min(10, int(n_invariants * MIN_MATCHES_FRACTION)))
+    print(min_matches)
     if (len(source_controlp) == 3 or len(target_controlp) == 3)\
             and len(matches) == 1:
         best_t = inv_model.fit(matches)
