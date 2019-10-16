@@ -279,7 +279,7 @@ def find_transform(source, target):
     #print("Current Max Iter is: ", max_iter)
     # Set the minimum matches to be between 1 and 10 asterisms
     min_matches = max(1, min(10, int(n_invariants * MIN_MATCHES_FRACTION)))
-    min_matches=3
+    min_matches=4
     #print(min_matches)
     
     if (len(source_controlp) == 3 or len(target_controlp) == 3)\
