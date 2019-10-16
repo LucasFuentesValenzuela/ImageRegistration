@@ -6,7 +6,7 @@ import os
 
 import tifffile as tiff
 
-from astroalign import *
+from astroalign_test import *
 
 def flip_rotate_images(Folders):
     for filename in os.listdir(Folders['HighMag']):
@@ -128,7 +128,7 @@ def register_img(img_virtual,img_lowMag,th):
 
 
 def viz_ref_points(img_virtual,img_lowMag,img_aligned,transf,pos_img_virtual,pos_img_lM,r, circles=True):
-    fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+    _, axes = plt.subplots(2, 2, figsize=(10, 10))
 
     colors = ['r', 'g', 'b', 'y', 'cyan', 'w', 'm']
 
@@ -173,13 +173,16 @@ def run_registration(Folders,th):
             img_virtual=cv2.imread(Folders['Virtual']+full_image_name,0)
             img_lowMag=cv2.imread(Folders['lowMag']+filename,0)
             try: 
-                img_aligned,transf,pos_img_virtual,pos_img_lM=register_img(img_virtual,img_lowMag,th)
+                img_aligned,_,_,_=register_img(img_virtual,img_lowMag,th)
                 cv2.imwrite(Folders['Aligned']+full_image_name,img_aligned)
                 print("Registration Succesful")
             except MaxIterError: 
                 print('ERROR: Could not find Registration -- skip FOV')
                 continue
-            except: 
+            except TooFewPointsError: 
+                print('Too Few Points')
+                continue
+            except: #Try to understand what this is
                 print('Other Error')
                 continue
             

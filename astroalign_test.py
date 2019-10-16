@@ -55,7 +55,9 @@ __all__ = [
     "estimate_transform",
     "find_transform",
     "matrix_transform",
-    "register"]
+    "register",
+    "TooFewPointsError",
+    "_find_sources"]
 
 
 import numpy as _np
@@ -240,11 +242,16 @@ def find_transform(source, target):
         raise TypeError('Input type for target not supported.')
 
     # Check for low number of reference points
+
+    #Added by Lucas
+    # print("checking the number of control points")
+    # print(len(source_controlp))
+    # print(len(target_controlp))
     if len(source_controlp) < 3:
-        raise Exception("Reference stars in source image are less than the "
+        raise TooFewPointsError("Reference stars in source image are less than the "
                         "minimum value (3).")
     if len(target_controlp) < 3:
-        raise Exception("Reference stars in target image are less than the "
+        raise TooFewPointsError("Reference stars in target image are less than the "
                         "minimum value (3).")
 
     source_invariants, source_asterisms = _generate_invariants(source_controlp)
@@ -278,9 +285,9 @@ def find_transform(source, target):
     max_iter = n_invariants
     #print("Current Max Iter is: ", max_iter)
     # Set the minimum matches to be between 1 and 10 asterisms
-    min_matches = max(1, min(10, int(n_invariants * MIN_MATCHES_FRACTION)))
-    min_matches=4
-    #print(min_matches)
+    # min_matches = max(1, min(10, int(n_invariants * MIN_MATCHES_FRACTION)))
+    min_matches=3
+    # print(min_matches)
     
     if (len(source_controlp) == 3 or len(target_controlp) == 3)\
             and len(matches) == 1:
@@ -396,10 +403,15 @@ def _find_sources(img):
     else:
         image = img.astype('float32')
     bkg = sep.Background(image)
-    thresh = 3. * bkg.globalrms
+    # thresh = 3. * bkg.globalrms
+    thresh=150 #mid-range value set in order to circumvent problem
     sources = sep.extract(image - bkg.back(), thresh)
     sources.sort(order='flux')
     return _np.array([[asrc['x'], asrc['y']] for asrc in sources[::-1]])
+
+## Added by Lucas
+class TooFewPointsError(Exception):
+    pass
 
 
 # Copyright (c) 2004-2007, Andrew D. Straw. All rights reserved.
