@@ -82,7 +82,7 @@ If the minimum fraction yields more than 10 triangles, 10 is used instead.
 Default: 0.8
 """
 
-NUM_NEAREST_NEIGHBORS = 5
+NUM_NEAREST_NEIGHBORS = 10
 """
 The number of nearest neighbors of a given star (including itself) to construct
 the triangle invariants.
@@ -275,16 +275,19 @@ def find_transform(source, target):
 
     inv_model = _MatchTransform(source_controlp, target_controlp)
     n_invariants = len(matches)
-    max_iter = n_invariants*10
-    print("Current Max Iter is: ", max_iter)
+    max_iter = n_invariants
+    #print("Current Max Iter is: ", max_iter)
     # Set the minimum matches to be between 1 and 10 asterisms
     min_matches = max(1, min(10, int(n_invariants * MIN_MATCHES_FRACTION)))
-    print(min_matches)
+    min_matches=3
+    #print(min_matches)
+    
     if (len(source_controlp) == 3 or len(target_controlp) == 3)\
             and len(matches) == 1:
         best_t = inv_model.fit(matches)
         inlier_ind = _np.arange(len(matches))  # All of the indices
     else:
+        #print(matches.shape)
         best_t, inlier_ind = _ransac(
             matches, inv_model, 1, max_iter, PIXEL_TOL, min_matches
         )
