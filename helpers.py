@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import cv2
 import re
 import os
-
+from tqdm import tqdm
 import tifffile as tiff
 
 from astroalign_test import *
@@ -82,20 +82,16 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
                 if i*fov_nh_y<=y_end and (i+1)*fov_nh_y>=y_end:
                     frame_y_end=i+1
             
-            # print("x_frames: ", frame_x_start, frame_x_end)
             #compatibility check
             if frame_x_start<=10 and frame_x_end>10: #it needs frames from both parths
                 print("This frame has not been neglected, it needs FOVs from both parts!")
                 continue
             elif frame_x_start>10 and partnb==2:  #we are just changing the name for proper loading, surely to be changed afterwards when dealing with overlap
-                print("x_frames: ", frame_x_start, frame_x_end)
                 frame_x_start-=10
                 frame_x_end-=10
-                print("x_frames: ", frame_x_start, frame_x_end)
                 #assuming there is an overlap of one row between part 1 and 2
                 frame_x_start+=1
                 frame_x_end+=1
-                print("x_frames: ", frame_x_start, frame_x_end)
 
             
 
@@ -212,7 +208,10 @@ def viz_ref_points(img_virtual,img_lowMag,img_aligned,transf,pos_img_virtual,pos
 
 
 def run_registration(Folders,th):
-    for filename in os.listdir(Folders['lowMag']):
+
+    missed_FOVs=[]
+
+    for filename in tqdm(os.listdir(Folders['lowMag'])):
         if 'fluorescent' in filename:
             print(filename)
             low_mag_id_1=int(filename[1:3])
@@ -224,17 +223,20 @@ def run_registration(Folders,th):
             try: 
                 img_aligned,_,_,_=register_img(img_virtual,img_lowMag,th)
                 cv2.imwrite(Folders['Aligned']+full_image_name,img_aligned)
-                print("Registration Succesful")
+                # print("Registration Succesful")
             except MaxIterError: 
-                print('ERROR: Could not find Registration -- skip FOV')
+                # print('ERROR: Could not find Registration')
+                missed_FOVs.append(filename)
                 continue
             except TooFewPointsError: 
-                print('Too Few Points')
+                # print('Too Few Points')
+                missed_FOVs.append(filename)
                 continue
             except: #Try to understand what this is
-                print('Other Error')
+                # print('Other Error')
+                missed_FOVs.append(filename)
                 continue
-            
-
         else:
             continue
+            
+    return missed_FOVs
