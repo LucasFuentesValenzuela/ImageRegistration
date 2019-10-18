@@ -14,21 +14,24 @@ def flip_rotate_images(Folders,partnb):
     key='HighMag_part'+str(partnb)
     print("Performing RF in following directory:", Folders[key])
 
-    for filename in os.listdir(Folders[key]):
+    for filename in tqdm(os.listdir(Folders[key])):
         
         if filename.endswith(".tif"): 
-            print(filename)
             #read only the first channel, which corresponds to DAPI
-            img=tiff.imread(Folders[key]+filename)
-            img=img[1,:,:]
-            img=img.transpose()
-            img=cv2.flip(img,0)
-            img=cv2.flip(img,1)
+            img0=tiff.imread(Folders[key]+filename)
+            img_list=[]
+            for channel in [0,1,2]:
+                img=img0[channel,:,:]
+                img=img.transpose()
+                img=cv2.flip(img,0)
+                img=cv2.flip(img,1)
+                img_list.append(img)
             nbrs=filename[-11:-4]
             nb1=int(nbrs[0:3])
             nb2=int(nbrs[4:8])
+            img=np.dstack(img_list)
             new_name=str(nb1)+'_'+str(nb2)+'.tif'
-            cv2.imwrite(Folders['HighMag_RF']+'part_'+str(partnb)+'/'+new_name,img)
+            tiff.imsave(Folders['HighMag_RF']+'part_'+str(partnb)+'/'+new_name,img)
         else:
             continue
 
@@ -43,7 +46,7 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
     fov_nh_x=nb_pixel['x']*pixel_size#nh = nighthawk, i.e. high mag
     fov_nh_y=nb_pixel['y']*pixel_size
 
-    for filename in os.listdir(Folders['lowMag']):
+    for filename in tqdm(os.listdir(Folders['lowMag'])):
         if 'fluorescent' in filename:
             
             print(filename)
@@ -99,20 +102,42 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
 
             
             #create blank picture
-            full_image=np.zeros((nb_pixel['y']*(frame_y_end-frame_y_start+1),nb_pixel['x']*(frame_x_end-frame_x_start+1)))
-            print("theory shape: ", full_image.shape)
+            full_image=np.zeros((nb_pixel['y']*(frame_y_end-frame_y_start+1),nb_pixel['x']*(frame_x_end-frame_x_start+1),3))
+
             idx_x=np.arange(frame_x_end,frame_x_start-1,-1)
             idx_y=np.arange(frame_y_end,frame_y_start-1,-1)
 
             for i in range(idx_x.shape[0]):
                 for j in range(idx_y.shape[0]):
-                    filename=str(idx_y[j])+'_'+str(idx_x[i])+'.tif'
-                    if os.path.exists(Folders['HighMag_RF']+'part_'+str(partnb)+'/'+filename):
-                        crt_img=cv2.imread(Folders['HighMag_RF']+'part_'+str(partnb)+'/'+filename,0)
+                    # filename=str(idx_y[j])+'_'+str(idx_x[i])+'.tif'
+                    key='HighMag_part'+str(partnb)
+
+                    for fnm in os.listdir(Folders[key]):
+                        if fnm.endswith(".tif"):  
+                            nbrs=fnm[-11:-4]
+                            nb1=int(nbrs[0:3])
+                            nb2=int(nbrs[4:8]) 
+                            if nb1 == idx_y[j] and nb2==idx_x[i]:
+                                filename = fnm
+                                pass
+                    
+                    print("I should have the file corresponding to ", str(idx_y[j])+'_'+str(idx_x[i])+'.tif')
+                    print("I am loading ", filename)
+                
+                    if os.path.exists(Folders[key]+filename):
+                        crt_img=tiff.imread(Folders[key]+filename)
+
+                        #flip_rotate image here
+                        #much easier, as it does not require you to load and save a large tiff image another time before
+                        crt_img=crt_img.transpose()
+                        crt_img=cv2.flip(crt_img,0)
+                        crt_img=cv2.flip(crt_img,1)
+                        print(crt_img.shape)
+
                     else:
                         print("file does not exist")
                         continue
-                    full_image[j*nb_pixel['y']:(j+1)*nb_pixel['y'],i*nb_pixel['x']:(i+1)*nb_pixel['x']]=crt_img
+                    full_image[j*nb_pixel['y']:(j+1)*nb_pixel['y'],i*nb_pixel['x']:(i+1)*nb_pixel['x'],:]=crt_img
 
                     #determine the shift for the crop region 
                     if i==0 and j==0:
@@ -131,12 +156,12 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
                         x_idx=int(round((x_ref-x_end)/pixel_size))
                         y_idx=int(round((y_ref-y_end)/pixel_size))
             
-            full_image=full_image[y_idx:y_idx+n_pixels_map,x_idx:x_idx+n_pixels_map]
+            full_image=full_image[y_idx:y_idx+n_pixels_map,x_idx:x_idx+n_pixels_map,:]
             # print(y_idx+n_pixels_map)
             # print(x_idx+n_pixels_map)
             
-            full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)+str('.png')
-            cv2.imwrite(Folders['Virtual']+full_image_name,full_image)
+            full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)+str('.tif')
+            tiff.imsave(Folders['Virtual']+full_image_name,full_image)
             print(full_image_name)
             print(full_image.shape)
         else:
