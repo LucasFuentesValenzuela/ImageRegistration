@@ -158,9 +158,9 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
                         y_idx=int(round((y_ref-y_end)/pixel_size))
             
             full_image=full_image[y_idx:y_idx+n_pixels_map,x_idx:x_idx+n_pixels_map,:]
-            print(full_image.shape)
+            # print(full_image.shape)
             full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)
-            
+
             # tiff.imsave(Folders['Virtual']+full_image_name+'.tif',full_image)
 
             for ch in [0,1,2]:
