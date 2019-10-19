@@ -96,17 +96,14 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
                 frame_x_start+=1
                 frame_x_end+=1
 
-            
-
-            
-
-            
             #create blank picture
             full_image=np.zeros((nb_pixel['y']*(frame_y_end-frame_y_start+1),nb_pixel['x']*(frame_x_end-frame_x_start+1),3))
 
             idx_x=np.arange(frame_x_end,frame_x_start-1,-1)
             idx_y=np.arange(frame_y_end,frame_y_start-1,-1)
+            
 
+            #iterate over the different frames making up the tiling
             for i in range(idx_x.shape[0]):
                 for j in range(idx_y.shape[0]):
                     # filename=str(idx_y[j])+'_'+str(idx_x[i])+'.tif'
@@ -121,18 +118,23 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
                                 filename = fnm
                                 pass
                     
-                    print("I should have the file corresponding to ", str(idx_y[j])+'_'+str(idx_x[i])+'.tif')
-                    print("I am loading ", filename)
+                    # print("I should have the file corresponding to ", str(idx_y[j])+'_'+str(idx_x[i])+'.tif')
+                    # print("I am loading ",Folders[key]+ filename)
                 
                     if os.path.exists(Folders[key]+filename):
                         crt_img=tiff.imread(Folders[key]+filename)
 
                         #flip_rotate image here
                         #much easier, as it does not require you to load and save a large tiff image another time before
-                        crt_img=crt_img.transpose()
-                        crt_img=cv2.flip(crt_img,0)
-                        crt_img=cv2.flip(crt_img,1)
-                        print(crt_img.shape)
+
+                        img_list=[]
+                        for channel in [0,1,2]:
+                            img=crt_img[channel,:,:]
+                            img=img.transpose()
+                            img=cv2.flip(img,0)
+                            img=cv2.flip(img,1)
+                            img_list.append(img)
+                        crt_img=np.dstack(img_list)
 
                     else:
                         print("file does not exist")
@@ -141,7 +143,6 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
 
                     #determine the shift for the crop region 
                     if i==0 and j==0:
-
                         #this condition is to properly determine what area of the region you want to crop
                         #super important to have it correctly coded, as otherwise you risk extracting the wrong frames
                         #in this case we add 10-1 because we did the same thing with the frames above
@@ -157,13 +158,15 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
                         y_idx=int(round((y_ref-y_end)/pixel_size))
             
             full_image=full_image[y_idx:y_idx+n_pixels_map,x_idx:x_idx+n_pixels_map,:]
-            # print(y_idx+n_pixels_map)
-            # print(x_idx+n_pixels_map)
-            
-            full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)+str('.tif')
-            tiff.imsave(Folders['Virtual']+full_image_name,full_image)
-            print(full_image_name)
             print(full_image.shape)
+            full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)
+            
+            # tiff.imsave(Folders['Virtual']+full_image_name+'.tif',full_image)
+
+            for ch in [0,1,2]:
+                cv2.imwrite(Folders['Virtual']+full_image_name+'_ch'+str(ch)+'.png',full_image[:,:,ch]/65535*255)
+            
+    
         else:
             continue
 
@@ -191,9 +194,8 @@ def register_img(img_virtual,img_lowMag,th):
 
     transf, (pos_img_virtual, pos_img_lM) = find_transform(img_virtual_bin, img_lowMag_bin)
     registered_image = apply_transform(transf,img_virtual, img_lowMag)
-    img_aligned=registered_image[0]*3
+    img_aligned=registered_image[0]
 
-    
     return img_aligned,transf,pos_img_virtual,pos_img_lM
 
 
@@ -242,12 +244,18 @@ def run_registration(Folders,th):
             low_mag_id_1=int(filename[1:3])
             low_mag_id_2=int(filename[4:6])
 
-            full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)+str('.png')
+            full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)+'_ch1'+str('.png')
             img_virtual=cv2.imread(Folders['Virtual']+full_image_name,0)
             img_lowMag=cv2.imread(Folders['lowMag']+filename,0)
+
             try: 
-                img_aligned,_,_,_=register_img(img_virtual,img_lowMag,th)
+                img_aligned,transf,_,_=register_img(img_virtual,img_lowMag,th)
                 cv2.imwrite(Folders['Aligned']+full_image_name,img_aligned)
+
+                for ch in [0,2]:
+                    other_ch=str(low_mag_id_1)+'_'+str(low_mag_id_2)+'_ch'+str(ch)+str('.png')
+                    other_img=cv2.imread(Folders['Virtual']+other_ch,0)
+                    cv2.imwrite(Folders['Aligned']+other_ch,apply_transform(transf,other_img, img_lowMag)[0])
                 # print("Registration Succesful")
             except MaxIterError: 
                 # print('ERROR: Could not find Registration')
