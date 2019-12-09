@@ -2,5 +2,7 @@ Current Status:
 - This branch contains the code that normally aligns the images properly
 - It also handles both part of the images
 
-
+You take the code again and you will try to make it work for 3 parts
+- you have to remember exactly how it worked
+- you have to remember what you changed in the astroalign library
 
