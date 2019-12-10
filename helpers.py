@@ -37,7 +37,7 @@ def flip_rotate_images(Folders,partnb):
 
 
 
-def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
+def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
     #concatenate FOVs, then crop ROI
 
     pixel_size=0.365623*10**-6
@@ -50,8 +50,19 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
         if 'fluorescent' in filename:
             
             print(filename)
-            low_mag_id_1=int(filename[1:3])#along y
-            low_mag_id_2=int(filename[4:6])#along x
+            if setup==1:
+                low_mag_id_1=int(filename[1:3])#along y
+                low_mag_id_2=int(filename[4:6])#along x
+            elif setup==2:
+                low_mag_id_1=int(filename[1:5])#along y
+                low_mag_id_2=int(filename[6:10])#along x
+
+            full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)
+            print(full_image_name)
+            if os.path.exists(Folders['Virtual']+full_image_name+'_ch1.png'):
+                print("skipping")
+                continue
+
 
             #here, we apply the offset depending on which part of the scan we are using
             #it is a temporary fix until we can to handle the overlap properly
@@ -114,6 +125,12 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
                             nbrs=fnm[-11:-4]
                             nb1=int(nbrs[0:3])
                             nb2=int(nbrs[4:8]) 
+
+                            if setup==1:
+                                pass #the system is built for that kind of numbering
+                            elif setup==2: #if the numbering is different
+                                nb2=10-nb2
+
                             if nb1 == idx_y[j] and nb2==idx_x[i]:
                                 filename = fnm
                                 pass
@@ -130,9 +147,13 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
                         img_list=[]
                         for channel in [0,1,2]:
                             img=crt_img[channel,:,:]
-                            img=img.transpose()
-                            img=cv2.flip(img,0)
-                            img=cv2.flip(img,1)
+                            if setup==1:
+                                img=img.transpose()
+                                img=cv2.flip(img,0)
+                                img=cv2.flip(img,1)
+                            elif setup==2:
+                                img=cv2.flip(img,1)
+                                img=img.transpose()
                             img_list.append(img)
                         crt_img=np.dstack(img_list)
 
@@ -159,7 +180,7 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset):
             
             full_image=full_image[y_idx:y_idx+n_pixels_map,x_idx:x_idx+n_pixels_map,:]
             # print(full_image.shape)
-            full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)
+            
 
             # tiff.imsave(Folders['Virtual']+full_image_name+'.tif',full_image)
 
@@ -234,15 +255,19 @@ def viz_ref_points(img_virtual,img_lowMag,img_aligned,transf,pos_img_virtual,pos
     plt.show()
 
 
-def run_registration(Folders,th):
+def run_registration(Folders,th,setup):
 
     missed_FOVs=[]
 
     for filename in tqdm(os.listdir(Folders['lowMag'])):
         if 'fluorescent' in filename:
             print(filename)
-            low_mag_id_1=int(filename[1:3])
-            low_mag_id_2=int(filename[4:6])
+            if setup==1:
+                low_mag_id_1=int(filename[1:3])#along y
+                low_mag_id_2=int(filename[4:6])#along x
+            elif setup==2:
+                low_mag_id_1=int(filename[1:5])#along y
+                low_mag_id_2=int(filename[6:10])#along x
 
             full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)+'_ch1'+str('.png')
             img_virtual=cv2.imread(Folders['Virtual']+full_image_name,0)
