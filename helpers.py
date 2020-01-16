@@ -47,6 +47,8 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
     fov_nh_y=nb_pixel['y']*pixel_size
 
     for filename in tqdm(os.listdir(Folders['lowMag'])):
+        if filename.startswith('._'):
+            continue
         if 'fluorescent' in filename:
             
             print(filename)
@@ -67,12 +69,16 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
             #here, we apply the offset depending on which part of the scan we are using
             #it is a temporary fix until we can to handle the overlap properly
             #it needs a bit more thinking
-            if low_mag_id_2 < 5:
-                y_start=max(low_mag_id_1*fov_oct-delta,0)+offset['y']
+            if setup ==2:
+                y_start=max(max(low_mag_id_1*fov_oct-delta,0)+offset['y'],0)
+                x_start=max(low_mag_id_2*fov_oct-delta,0)+offset['x'] 
+                partnb=1
+            elif low_mag_id_2 < 5:
+                y_start=max(max(low_mag_id_1*fov_oct-delta,0)+offset['y'],0)
                 x_start=max(low_mag_id_2*fov_oct-delta,0)+offset['x']
                 partnb=1
             elif low_mag_id_2 >6 : 
-                y_start=max(low_mag_id_1*fov_oct-delta,0)+offset['y']#-offset['y_part2']
+                y_start=max(max(low_mag_id_1*fov_oct-delta,0)+offset['y'],0)#-offset['y_part2']
                 x_start=max(low_mag_id_2*fov_oct-delta,0)+offset['x']#-offset['x_part2']
                 partnb=2
             else:
@@ -84,8 +90,9 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
             
             #loop through the frames
             #identify which ones are the limit ones
-            nb_im_x=21
-
+            nb_im_x=23
+            print("x_s, x_e: ", x_start, x_end)
+            print("y_s, y_e: ", y_start, y_end)
             for i in range(nb_im_x):
                 if i*fov_nh_x<=x_start and (i+1)*fov_nh_x>=x_start:
                     frame_x_start=i+1
@@ -97,10 +104,10 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
                     frame_y_end=i+1
             
             #compatibility check
-            if frame_x_start<=10 and frame_x_end>10: #it needs frames from both parths
+            if frame_x_start<=10 and frame_x_end>10 and setup==1: #it needs frames from both parths
                 print("This frame has not been neglected, it needs FOVs from both parts!")
                 continue
-            elif frame_x_start>10 and partnb==2:  #we are just changing the name for proper loading, surely to be changed afterwards when dealing with overlap
+            elif frame_x_start>10 and partnb==2 and setup==1:  #we are just changing the name for proper loading, surely to be changed afterwards when dealing with overlap
                 frame_x_start-=10
                 frame_x_end-=10
                 #assuming there is an overlap of one row between part 1 and 2
@@ -108,6 +115,8 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
                 frame_x_end+=1
 
             #create blank picture
+            print("frame y end: ", frame_y_end)
+            print("frame y start", frame_y_start)
             full_image=np.zeros((nb_pixel['y']*(frame_y_end-frame_y_start+1),nb_pixel['x']*(frame_x_end-frame_x_start+1),3))
 
             idx_x=np.arange(frame_x_end,frame_x_start-1,-1)
@@ -121,6 +130,8 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
                     key='HighMag_part'+str(partnb)
 
                     for fnm in os.listdir(Folders[key]):
+                        if fnm.startswith("._"):
+                            continue
                         if fnm.endswith(".tif"):  
                             nbrs=fnm[-11:-4]
                             nb1=int(nbrs[0:3])
@@ -129,7 +140,7 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
                             if setup==1:
                                 pass #the system is built for that kind of numbering
                             elif setup==2: #if the numbering is different
-                                nb2=10-nb2
+                                nb2=23-nb2
 
                             if nb1 == idx_y[j] and nb2==idx_x[i]:
                                 filename = fnm
@@ -160,6 +171,10 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
                     else:
                         print("file does not exist")
                         continue
+                    # print(crt_img.shape)
+                    nb_pixel['y']=crt_img.shape[0]
+                    nb_pixel['x']=crt_img.shape[1]
+                    # print(nb_pixel)
                     full_image[j*nb_pixel['y']:(j+1)*nb_pixel['y'],i*nb_pixel['x']:(i+1)*nb_pixel['x'],:]=crt_img
 
                     #determine the shift for the crop region 
@@ -260,6 +275,8 @@ def run_registration(Folders,th,setup):
     missed_FOVs=[]
 
     for filename in tqdm(os.listdir(Folders['lowMag'])):
+        if filename.startswith('._'):
+            continue
         if 'fluorescent' in filename:
             print(filename)
             if setup==1:
