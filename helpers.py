@@ -43,6 +43,7 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
     pixel_size=0.365623*10**-6
     size_cropping=fov_oct+2*delta
     n_pixels_map=round(size_cropping/pixel_size)
+    fov_nh_x, fov_nh_y = compute_fov_nh(pixel_size)
     fov_nh_x=nb_pixel['x']*pixel_size#nh = nighthawk, i.e. high mag
     fov_nh_y=nb_pixel['y']*pixel_size
 
@@ -60,7 +61,6 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
                 low_mag_id_2=int(filename[6:10])#along x
 
             full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)
-            print(full_image_name)
             if os.path.exists(Folders['Virtual']+full_image_name+'_ch1.png'):
                 print("skipping")
                 continue
@@ -102,7 +102,8 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
                     frame_y_start=i+1
                 if i*fov_nh_y<=y_end and (i+1)*fov_nh_y>=y_end:
                     frame_y_end=i+1
-            
+
+
             #compatibility check
             if frame_x_start<=10 and frame_x_end>10 and setup==1: #it needs frames from both parths
                 print("This frame has not been neglected, it needs FOVs from both parts!")
@@ -115,14 +116,15 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
                 frame_x_end+=1
 
             #create blank picture
-            print("frame y end: ", frame_y_end)
             print("frame y start", frame_y_start)
+            print("frame y end: ", frame_y_end)
+            print("frame x start: ", frame_x_start)
+            print("frame x end: ", frame_x_end)
+
             full_image=np.zeros((nb_pixel['y']*(frame_y_end-frame_y_start+1),nb_pixel['x']*(frame_x_end-frame_x_start+1),3))
 
             idx_x=np.arange(frame_x_end,frame_x_start-1,-1)
             idx_y=np.arange(frame_y_end,frame_y_start-1,-1)
-            
-
             #iterate over the different frames making up the tiling
             for i in range(idx_x.shape[0]):
                 for j in range(idx_y.shape[0]):
@@ -192,9 +194,8 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
                         y_ref=y_start_crt+nb_pixel['y']*pixel_size
                         x_idx=int(round((x_ref-x_end)/pixel_size))
                         y_idx=int(round((y_ref-y_end)/pixel_size))
-            
+
             full_image=full_image[y_idx:y_idx+n_pixels_map,x_idx:x_idx+n_pixels_map,:]
-            # print(full_image.shape)
             
 
             # tiff.imsave(Folders['Virtual']+full_image_name+'.tif',full_image)
