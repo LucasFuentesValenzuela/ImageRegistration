@@ -43,7 +43,7 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
     pixel_size=0.365623*10**-6
     size_cropping=fov_oct+2*delta
     n_pixels_map=round(size_cropping/pixel_size)
-    fov_nh_x, fov_nh_y = compute_fov_nh(pixel_size)
+    # fov_nh_x, fov_nh_y = compute_fov_nh(pixel_size)
     fov_nh_x=nb_pixel['x']*pixel_size#nh = nighthawk, i.e. high mag
     fov_nh_y=nb_pixel['y']*pixel_size
 
@@ -66,9 +66,6 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
                 continue
 
 
-            #here, we apply the offset depending on which part of the scan we are using
-            #it is a temporary fix until we can to handle the overlap properly
-            #it needs a bit more thinking
             if setup ==2:
                 y_start=max(max(low_mag_id_1*fov_oct-delta,0)+offset['y'],0)
                 x_start=max(low_mag_id_2*fov_oct-delta,0)+offset['x'] 
@@ -116,10 +113,10 @@ def concatenate_crop_ROI(nb_pixel,delta,fov_oct,Folders,offset,setup):
                 frame_x_end+=1
 
             #create blank picture
-            print("frame y start", frame_y_start)
-            print("frame y end: ", frame_y_end)
-            print("frame x start: ", frame_x_start)
-            print("frame x end: ", frame_x_end)
+            # print("frame y start", frame_y_start)
+            # print("frame y end: ", frame_y_end)
+            # print("frame x start: ", frame_x_start)
+            # print("frame x end: ", frame_x_end)
 
             full_image=np.zeros((nb_pixel['y']*(frame_y_end-frame_y_start+1),nb_pixel['x']*(frame_x_end-frame_x_start+1),3))
 
