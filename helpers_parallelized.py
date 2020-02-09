@@ -11,7 +11,7 @@ import multiprocessing as mp
 
 
 
-def cropImage(filename, nb_pixel, delta, fov_oct, Folders, offset, recompute_all=True):
+def cropImage(filename, nb_pixel, delta, fov_oct, Folders, offset, recompute_all=True, setup=1):
     """
     Computes a coarse alignment around the lowMag image. 
 
@@ -50,6 +50,8 @@ def cropImage(filename, nb_pixel, delta, fov_oct, Folders, offset, recompute_all
         
         print(filename)
         parse_fn=filename.split('_')
+        
+        #setup: there was setup here but don't think needed now
         low_mag_id_1=int(parse_fn[1])#along y
         low_mag_id_2=int(parse_fn[2])#along x
         full_image_name=str(low_mag_id_1)+'_'+str(low_mag_id_2)
@@ -101,7 +103,11 @@ def cropImage(filename, nb_pixel, delta, fov_oct, Folders, offset, recompute_all
                         nb1=int(nbrs[0:3])
                         nb2=int(nbrs[4:8]) 
 
-                        nb2=23-nb2
+
+                        if setup==1:#like 3C
+                            pass #the system is built for that kind of numbering
+                        elif setup==2: #if the numbering is different
+                            nb2=23-nb2
 
                         if nb1 == idx_y[j] and nb2==idx_x[i]:
                             filename = fnm
@@ -116,8 +122,13 @@ def cropImage(filename, nb_pixel, delta, fov_oct, Folders, offset, recompute_all
                     img_list=[]
                     for channel in [0,1,2]:
                         img=crt_img[channel,:,:]
-                        img=cv2.flip(img,1)
-                        img=img.transpose()
+                        if setup==1:
+                            img=img.transpose()
+                            img=cv2.flip(img,0)
+                            img=cv2.flip(img,1)
+                        elif setup==2:
+                            img=cv2.flip(img,1)
+                            img=img.transpose()
                         img_list.append(img)
                     crt_img=np.dstack(img_list)
 
