@@ -24,7 +24,6 @@ def main():
     Folders=dict()
     Folders['HighMag']=os.path.join(Volume2,'stitched/')
     Folders['lowMag']=os.path.join(Volume2,'BGremoved/')
-    Folders['HighMag_RF']=os.path.join(Volume,'HighMag_RF/')
     Folders['Virtual']=os.path.join(Volume,'HighMag_Tiled/')
     Folders['Aligned']=os.path.join(Volume,'Registered/')
 
