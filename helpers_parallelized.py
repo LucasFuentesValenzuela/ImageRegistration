@@ -64,23 +64,32 @@ def cropImage(filename, nb_pixel, delta, fov_oct, Folders, offset, recompute_all
 
         #Location of the start and end of the frame 
         y_start=max(max(low_mag_id_1*fov_oct-delta,0)+offset['y'],0)
-        x_start=max(low_mag_id_2*fov_oct-delta,0)+offset['x']
+        x_start=max(max(low_mag_id_2*fov_oct-delta,0)+offset['x'],0)
         y_end=y_start+fov_oct+2*delta
         x_end=x_start+fov_oct+2*delta 
 
+        print("x start: ", x_start)
+        print("y start: ", y_start)
         #loop through the frames
         #identify which ones are the limit ones
         nb_im_x=23 #maximum number of frames
-        for i in range(nb_im_x):
-            if i*fov_nh_x<=x_start and (i+1)*fov_nh_x>=x_start:
-                frame_x_start=i+1
-            if i*fov_nh_x<=x_end and (i+1)*fov_nh_x>=x_end:
-                frame_x_end=i+1
-            if i*fov_nh_y<=y_start and (i+1)*fov_nh_y>=y_start:
-                frame_y_start=i+1
-            if i*fov_nh_y<=y_end and (i+1)*fov_nh_y>=y_end:
-                frame_y_end=i+1
+        nb_im_y=19
+        # for i in range(nb_im):
+        #     if i*fov_nh_x<=x_start and (i+1)*fov_nh_x>=x_start:
+        #         frame_x_start=i+1
+        #     if i*fov_nh_x<=x_end and (i+1)*fov_nh_x>=x_end:
+        #         frame_x_end=i+1
+        #     if i*fov_nh_y<=y_start and (i+1)*fov_nh_y>=y_start:
+        #         frame_y_start=i+1
+        #     if i*fov_nh_y<=y_end and (i+1)*fov_nh_y>=y_end:
+        #         frame_y_end=i+1
 
+        frame_x_start=int(np.floor(x_start/fov_nh_x))+1
+        frame_x_end=np.minimum(int(np.ceil(x_end/fov_nh_x))+1, nb_im_x)
+        frame_y_start=int(np.floor(y_start/fov_nh_y))+1
+        frame_y_end=np.minimum(int(np.ceil(y_end/fov_nh_y))+1, nb_im_y)
+        print(frame_x_start, frame_x_end)
+        print(frame_y_start, frame_y_end)
         #create empty image to be filled in later
         full_image=np.zeros((nb_pixel['y']*(frame_y_end-frame_y_start+1),nb_pixel['x']*(frame_x_end-frame_x_start+1),3),dtype='uint16')
 
@@ -103,7 +112,7 @@ def cropImage(filename, nb_pixel, delta, fov_oct, Folders, offset, recompute_all
                         nb1=int(nbrs[0:3])
                         nb2=int(nbrs[4:8]) 
 
-
+                        
                         if setup==1:#like 3C
                             pass #the system is built for that kind of numbering
                         elif setup==2: #if the numbering is different
@@ -153,12 +162,20 @@ def cropImage(filename, nb_pixel, delta, fov_oct, Folders, offset, recompute_all
                     y_ref=y_start_crt+nb_pixel['y']*pixel_size
                     x_idx=int(round((x_ref-x_end)/pixel_size))
                     y_idx=int(round((y_ref-y_end)/pixel_size))
+
+                    # print("idx: ", x_idx, y_idx)
+                    #sometimes you just don't have the frame (x_idx is negative)
+                    x_idx=np.maximum(x_idx,0)
+                    y_idx=np.maximum(y_idx,0)
         
+        print(full_image.shape)
+        print(y_idx+n_pixels_map)
+        print(x_idx+n_pixels_map)
         full_image=full_image[y_idx:y_idx+n_pixels_map,x_idx:x_idx+n_pixels_map,:]
         # tiff.imsave(Folders['Virtual']+full_image_name+'.tif',full_image)
 
         for ch in [0,1,2]:
-            cv2.imwrite(Folders['Virtual']+full_image_name+'_ch'+str(ch)+'.png',full_image[:,:,ch])
+            # cv2.imwrite(Folders['Virtual']+full_image_name+'_ch'+str(ch)+'.png',full_image[:,:,ch])
             cv2.imwrite(Folders['Virtual']+full_image_name+'_ch'+str(ch)+'.tif',full_image[:,:,ch])
     else:
         return
@@ -187,6 +204,7 @@ def binarize_img(img,th,hM):
     # th is between 0 and 1
     #np.iinfo: just to scale the threshold related to the actual maximum value of the encoding
     thresh=cv2.threshold(img, th*np.iinfo(img.dtype).max, 255, cv2.THRESH_BINARY)[1]
+
     thresh=thresh.astype('uint8')
 
     if hM==True:
@@ -195,7 +213,6 @@ def binarize_img(img,th,hM):
     else:
         n_iter=2
         n_iter_bis=4
-    # print("eroding and dilating")
     thresh = cv2.erode(thresh, None, iterations=n_iter)
     thresh = cv2.dilate(thresh, None, iterations=n_iter_bis)
     
@@ -227,7 +244,6 @@ def get_transform_withScaling(img_virtual,img_lowMag,th,scaleUpFactor=2):
     """
     img_virtual_bin=binarize_img(img_virtual,th,True)
     img_lowMag_bin=binarize_img(img_lowMag,th,False)
-
     # finding the transform
     transf, (pos_img_virtual, pos_img_lM) = find_transform(img_virtual_bin,img_lowMag_bin)
 
@@ -345,18 +361,21 @@ def alignImage(filename,Folders,th):
 
 from functools import partial
 
-def run_concatenate_crop_parallelized(nb_pixel,delta,fov_oct,Folders,offset,recompute_all=True,numThreads=16):
+def run_concatenate_crop_parallelized(nb_pixel,delta,fov_oct,Folders,offset,recompute_all=True, setup=1,numThreads=16):
     print('running concatenate_crop')
-    filename_list = tqdm(os.listdir(Folders['lowMag']))
+    #there was tqdm before
+    filename_list = os.listdir(Folders['lowMag'])
     pool = mp.Pool(processes=numThreads)
     pool.map(partial(
         cropImage,nb_pixel=nb_pixel,delta=delta,
         fov_oct=fov_oct,Folders=Folders,
-        offset=offset,recompute_all=recompute_all
+        offset=offset,recompute_all=recompute_all,
+        setup = setup
         ), filename_list)
 
 def run_registration_parallelized(Folders,th,numThreads=16):
     print('running image registration')
-    filename_list = tqdm(os.listdir(Folders['lowMag']))
+    #there was tqdm before
+    filename_list = os.listdir(Folders['lowMag'])
     pool = mp.Pool(processes=numThreads)
     pool.map(partial(alignImage,Folders=Folders,th=th), filename_list)

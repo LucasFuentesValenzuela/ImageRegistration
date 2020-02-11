@@ -1,6 +1,7 @@
 import re
 import os
 from helpers_parallelized import run_concatenate_crop_parallelized, run_registration_parallelized
+import argparse
 
 def yes_no(question):
     yes = set(['yes','y', 'ye', ''])
@@ -17,15 +18,26 @@ def yes_no(question):
 
 def main():
 
+    #parsing command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-nth", help="Number of threads for parallelization",
+                        type=int, default=16)
+    args = parser.parse_args()
+
     #Define paths
-    Volume='/Volumes/Extreme SSD/16C_1part/NewCode/'
-    Volume2='/Volumes/Extreme SSD/16C_1part/'
+    Volume='/Volumes/Extreme SSD/w0206_2/'
+    Volume2='/Volumes/GoogleDrive/My Drive/Data/w0206_2_High_Mag_stitched/'
 
     Folders=dict()
-    Folders['HighMag']=os.path.join(Volume2,'stitched/')
-    Folders['lowMag']=os.path.join(Volume2,'BGremoved/')
+    Folders['HighMag']=os.path.join(Volume2)
+    Folders['lowMag']=os.path.join(Volume,'BGremoved/')
     Folders['Virtual']=os.path.join(Volume,'HighMag_Tiled/')
     Folders['Aligned']=os.path.join(Volume,'Registered/')
+
+    #Create the directory if they do not yet exist
+    for dirs in ['Virtual','Aligned']:
+        if not os.path.exists(Folders[dirs]):
+            os.makedirs(Folders[dirs]) 
 
 
     ##################################################
@@ -44,8 +56,14 @@ def main():
 
     #These parameters have to be determined in advance, manually
     offset=dict()
-    offset['x']=1800*pixel_size
-    offset['y']=200*pixel_size
+
+    #offset measured in nh pixels!
+    #16C
+    # offset['x']=1800*pixel_size
+    # offset['y']=200*pixel_size
+    #w0206_2
+    offset['x']=4500*pixel_size
+    offset['y']=-1100*pixel_size
 
     th=150.0/255
     delta=5*10**-4
@@ -70,13 +88,13 @@ def main():
         print("---------- Running concatenation and cropping")
         run_concatenate_crop_parallelized(
             nb_pixel,delta,fov_oct,Folders,offset,
-            recompute_all=recompute_all,numThreads=16
+            recompute_all=recompute_all,numThreads=args.nth
             )
 
     #run fine alignment
     if registration:
         print("---------- Running registration")
-        run_registration_parallelized(Folders,th)
+        run_registration_parallelized(Folders,th, numThreads=args.nth)
 
 if __name__ == "__main__":
     main()
