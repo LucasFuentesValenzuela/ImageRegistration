@@ -25,12 +25,11 @@ def main():
     args = parser.parse_args()
 
     #Define paths
-    Volume='/Volumes/Extreme SSD/w0206_2/'
-    Volume2='/Volumes/GoogleDrive/My Drive/Data/w0206_2_High_Mag_stitched/'
+    Volume='/Volumes/Extreme SSD/w0206_1'
 
     Folders=dict()
-    Folders['HighMag']=os.path.join(Volume2)
-    Folders['lowMag']=os.path.join(Volume,'BGremoved/')
+    Folders['HighMag']=os.path.join(Volume, 'w0206_1_HighMag/')
+    Folders['lowMag']=os.path.join(Volume,'w0206_1_LowMag','BGremoved/')
     Folders['Virtual']=os.path.join(Volume,'HighMag_Tiled/')
     Folders['Aligned']=os.path.join(Volume,'Registered/')
 
@@ -62,8 +61,14 @@ def main():
     # offset['x']=1800*pixel_size
     # offset['y']=200*pixel_size
     #w0206_2
-    offset['x']=4500*pixel_size
-    offset['y']=-1100*pixel_size
+    # offset['x']=4500*pixel_size
+    # offset['y']=-1100*pixel_size
+    #3D
+    # offset['x']=-500*pixel_size
+    # offset['y']=500*pixel_size
+    #w0206_1
+    offset['x']=3200*pixel_size
+    offset['y']=-1500*pixel_size 
 
     th=150.0/255
     delta=5*10**-4

@@ -68,8 +68,8 @@ def cropImage(filename, nb_pixel, delta, fov_oct, Folders, offset, recompute_all
         y_end=y_start+fov_oct+2*delta
         x_end=x_start+fov_oct+2*delta 
 
-        print("x start: ", x_start)
-        print("y start: ", y_start)
+        # print("x start: ", x_start)
+        # print("y start: ", y_start)
         #loop through the frames
         #identify which ones are the limit ones
         nb_im_x=23 #maximum number of frames
@@ -88,8 +88,8 @@ def cropImage(filename, nb_pixel, delta, fov_oct, Folders, offset, recompute_all
         frame_x_end=np.minimum(int(np.ceil(x_end/fov_nh_x))+1, nb_im_x)
         frame_y_start=int(np.floor(y_start/fov_nh_y))+1
         frame_y_end=np.minimum(int(np.ceil(y_end/fov_nh_y))+1, nb_im_y)
-        print(frame_x_start, frame_x_end)
-        print(frame_y_start, frame_y_end)
+        # print(frame_x_start, frame_x_end)
+        # print(frame_y_start, frame_y_end)
         #create empty image to be filled in later
         full_image=np.zeros((nb_pixel['y']*(frame_y_end-frame_y_start+1),nb_pixel['x']*(frame_x_end-frame_x_start+1),3),dtype='uint16')
 
@@ -168,9 +168,9 @@ def cropImage(filename, nb_pixel, delta, fov_oct, Folders, offset, recompute_all
                     x_idx=np.maximum(x_idx,0)
                     y_idx=np.maximum(y_idx,0)
         
-        print(full_image.shape)
-        print(y_idx+n_pixels_map)
-        print(x_idx+n_pixels_map)
+        # print(full_image.shape)
+        # print(y_idx+n_pixels_map)
+        # print(x_idx+n_pixels_map)
         full_image=full_image[y_idx:y_idx+n_pixels_map,x_idx:x_idx+n_pixels_map,:]
         # tiff.imsave(Folders['Virtual']+full_image_name+'.tif',full_image)
 
