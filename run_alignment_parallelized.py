@@ -25,11 +25,11 @@ def main():
     args = parser.parse_args()
 
     #Define paths
-    Volume='/Volumes/Extreme SSD/w0206_1'
+    Volume='/media/lucas/Extreme SSD/Heparin18/'
 
     Folders=dict()
-    Folders['HighMag']=os.path.join(Volume, 'w0206_1_HighMag/')
-    Folders['lowMag']=os.path.join(Volume,'w0206_1_LowMag','BGremoved/')
+    Folders['HighMag']=os.path.join(Volume, 'HighMag/')
+    Folders['lowMag']=os.path.join(Volume,'LowMag','BGremoved/')
     Folders['Virtual']=os.path.join(Volume,'HighMag_Tiled/')
     Folders['Aligned']=os.path.join(Volume,'Registered/')
 
@@ -67,13 +67,19 @@ def main():
     # offset['x']=-500*pixel_size
     # offset['y']=500*pixel_size
     #w0206_1
-    offset['x']=3200*pixel_size
-    offset['y']=-1500*pixel_size 
+    # offset['x']=3200*pixel_size
+    # offset['y']=-1500*pixel_size 
+
+    #Heparin18
+    offset['x']=2000*pixel_size
+    offset['y']=1200*pixel_size 
 
     th=150.0/255
     delta=5*10**-4
 
-
+    ################################################
+    #
+    print("Folder: ", Volume)
     ################################################
     # Get input
 
